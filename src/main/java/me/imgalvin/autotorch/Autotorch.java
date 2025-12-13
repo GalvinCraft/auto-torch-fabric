@@ -67,7 +67,13 @@ public class Autotorch implements ModInitializer {
 		LOGGER.info("{} has been initialised!", MOD_ID);
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(
-            literal("autotorch")
+            literal("autotorch").executes(context -> {
+                ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+                boolean isEnabled = isAutoTorchEnabled(player);
+                String status = isEnabled ? "enabled" : "disabled";
+                context.getSource().sendFeedback(() -> Text.literal("AutoTorch is currently " + status + "."), false);
+                return 1;
+            })
                 .then(literal("on").executes(context -> setAutoTorchState(context, true)))
                 .then(literal("off").executes(context -> setAutoTorchState(context, false)))
                 .then(literal("toggle").executes(Autotorch::toggleAutoTorchState))
@@ -77,7 +83,7 @@ public class Autotorch implements ModInitializer {
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             ServerPlayerEntity player = handler.getPlayer();
             boolean isEnabled = isAutoTorchEnabled(player);
-            String status = isEnabled ? "active" : "disabled";
+            String status = isEnabled ? "enabled" : "disabled";
             player.sendMessage(Text.literal("AutoTorch is " + status + "."), false);
         });
 
@@ -131,7 +137,7 @@ public class Autotorch implements ModInitializer {
                             continue;
                         }
 
-                        // Get placement position (block under player) -
+                        // Get placement position (block under player)
                         BlockPos placePos = playerPos.down();
 
                         // Only place if below block is solid and above is air
