@@ -2,7 +2,10 @@ package me.imgalvin.autotorch;
 
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.serialization.Codec;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
@@ -12,15 +15,11 @@ import net.minecraft.item.Items;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
-
 import net.minecraft.world.World;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static net.minecraft.server.command.CommandManager.literal;
 
@@ -28,16 +27,27 @@ public class Autotorch implements ModInitializer {
 	public static final String MOD_ID = "auto-torch";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
+    // Data Attachment for persistent player state
+    public static final AttachmentType<Boolean> AUTO_TORCH_ENABLED = AttachmentRegistry.create(
+        Identifier.of(MOD_ID, "enabled"),
+        builder -> builder
+            .initializer(() -> true)  // Default: enabled
+            .persistent(Codec.BOOL)   // Persists across restarts
+    );
+
     private static int tickCounter = 0;
-    private static final Map<UUID, Boolean> playerStates = new ConcurrentHashMap<>();
 
     private static boolean isAutoTorchEnabled(ServerPlayerEntity player) {
-        return playerStates.getOrDefault(player.getUuid(), true);
+        return player.getAttachedOrElse(AUTO_TORCH_ENABLED, true);
+    }
+
+    private static void setAutoTorchEnabled(ServerPlayerEntity player, boolean enabled) {
+        player.setAttached(AUTO_TORCH_ENABLED, enabled);
     }
 
     private static int setAutoTorchState(CommandContext<ServerCommandSource> context, boolean enabled) throws CommandSyntaxException {
         ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
-        playerStates.put(player.getUuid(), enabled);
+        setAutoTorchEnabled(player, enabled);
         String status = enabled ? "enabled" : "disabled";
         context.getSource().sendFeedback(() -> Text.literal("AutoTorch has been " + status + "."), false);
         return 1;
@@ -46,7 +56,7 @@ public class Autotorch implements ModInitializer {
     private static int toggleAutoTorchState(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
         boolean newState = !isAutoTorchEnabled(player);
-        playerStates.put(player.getUuid(), newState);
+        setAutoTorchEnabled(player, newState);
         String status = newState ? "enabled" : "disabled";
         context.getSource().sendFeedback(() -> Text.literal("AutoTorch has been " + status + "."), false);
         return 1;
