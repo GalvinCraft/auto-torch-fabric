@@ -5,6 +5,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.Items;
@@ -62,6 +63,14 @@ public class Autotorch implements ModInitializer {
                 .then(literal("toggle").executes(Autotorch::toggleAutoTorchState))
         ));
 
+        // Show player their AutoTorch status when they join the server
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+            ServerPlayerEntity player = handler.getPlayer();
+            boolean isEnabled = isAutoTorchEnabled(player);
+            String status = isEnabled ? "active" : "disabled";
+            player.sendMessage(Text.literal("AutoTorch is " + status + "."), false);
+        });
+
         // Query this every 20 ticks (1 second)
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             tickCounter++;
@@ -106,10 +115,10 @@ public class Autotorch implements ModInitializer {
                             }
                         }
 
-                        // If no torch found, stop here
+                        // If no torch found, skip this player
                         if (torchSlot == -1) {
                             LOGGER.info("Player {} has no torches!", player.getName().getString());
-                            return; // or continue; if inside tick loop
+                            continue;
                         }
 
                         // Get placement position (block under player) -
@@ -118,7 +127,7 @@ public class Autotorch implements ModInitializer {
                         // Only place if below block is solid and above is air
                         if (!world.getBlockState(placePos).isSolidBlock(world, placePos)) {
                             LOGGER.info("Cannot place torch — no solid block below at {}", placePos);
-                            return;
+                            continue;
                         }
 
                         BlockPos torchPos = placePos.up();
