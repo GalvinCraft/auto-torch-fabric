@@ -36,6 +36,10 @@ public class Autotorch implements ModInitializer {
     );
 
     private static int tickCounter = 0;
+    // Controls whether detailed debug logs are printed to the server console.
+    // Can be toggled in-game using the '/autotorch debug' command (requires permission level 2).
+    // Default is 'false' to keep the console clean during normal operation.
+    private static boolean debugLoggingEnabled = false;
 
     private static boolean isAutoTorchEnabled(ServerPlayerEntity player) {
         return player.getAttachedOrElse(AUTO_TORCH_ENABLED, true);
@@ -77,6 +81,12 @@ public class Autotorch implements ModInitializer {
                 .then(literal("on").executes(context -> setAutoTorchState(context, true)))
                 .then(literal("off").executes(context -> setAutoTorchState(context, false)))
                 .then(literal("toggle").executes(Autotorch::toggleAutoTorchState))
+                .then(literal("debug").requires(source -> source.hasPermissionLevel(2)).executes(context -> {
+                    debugLoggingEnabled = !debugLoggingEnabled;
+                    String status = debugLoggingEnabled ? "enabled" : "disabled";
+                    context.getSource().sendFeedback(() -> Text.literal("Debug logging " + status + "."), false);
+                    return 1;
+                }))
         ));
 
         // Show player their AutoTorch status when they join the server
@@ -114,11 +124,15 @@ public class Autotorch implements ModInitializer {
 
                     BlockPos playerPos = player.getBlockPos();
                     int blockLightLevel = world.getLightLevel(playerPos);
-                    LOGGER.info("Player {} is at position {} in light level {}", player.getName().toString(), playerPos, blockLightLevel);
+                    if (debugLoggingEnabled) {
+                        LOGGER.info("Player {} is at position {} in light level {}", player.getName().toString(), playerPos, blockLightLevel);
+                    }
 
                     // Now lets place the torch if the light level is at 0
                     if (blockLightLevel == 0) {
-                        LOGGER.info("Player {} is in darkness at position {}, attempting to place torch", player.getName().getString(), playerPos);
+                        if (debugLoggingEnabled) {
+                            LOGGER.info("Player {} is in darkness at position {}, attempting to place torch", player.getName().getString(), playerPos);
+                        }
 
                         PlayerInventory inventory = player.getInventory();
                         int torchSlot = -1;
@@ -133,7 +147,9 @@ public class Autotorch implements ModInitializer {
 
                         // If no torch found, skip this player
                         if (torchSlot == -1) {
-                            LOGGER.info("Player {} has no torches!", player.getName().getString());
+                            if (debugLoggingEnabled) {
+                                LOGGER.info("Player {} has no torches!", player.getName().getString());
+                            }
                             continue;
                         }
 
@@ -142,18 +158,24 @@ public class Autotorch implements ModInitializer {
 
                         // Only place if below block is solid and above is air
                         if (!world.getBlockState(placePos).isSolidBlock(world, placePos)) {
-                            LOGGER.info("Cannot place torch — no solid block below at {}", placePos);
+                            if (debugLoggingEnabled) {
+                                LOGGER.info("Cannot place torch — no solid block below at {}", placePos);
+                            }
                             continue;
                         }
 
                         BlockPos torchPos = placePos.up();
 
                         if (world.isAir(torchPos)) {
+                            if (debugLoggingEnabled) {
+                                LOGGER.info("Placed torch at {} and removed one from inventory", torchPos);
+                            }
                             world.setBlockState(torchPos, Blocks.TORCH.getDefaultState());
                             inventory.removeStack(torchSlot, 1);
-                            LOGGER.info("Placed torch at {} and removed one from inventory", torchPos);
                         } else {
-                            LOGGER.info("Cannot place torch — block not air at {}", torchPos);
+                            if (debugLoggingEnabled) {
+                                LOGGER.info("Cannot place torch — block not air at {}", torchPos);
+                            }
                         }
                     }
                 }
