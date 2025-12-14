@@ -26,9 +26,9 @@ Closes [#2](https://github.com/GalvinCraft/auto-torch-fabric/issues/2)
 
 Gives players the ability to toggle AutoTorch functionality for themselves. New commands for this are
 
-- `/autotorch on` - Turns AutoTorchon for the player
-- `/autotorch off` - Turns AutoTorchon for the player
-- `/autotorch toggle` - Toggles AutoTorchon for the player
+- `/autotorch on` - Turns AutoTorch on for the player
+- `/autotorch off` - Turns AutoTorch off for the player
+- `/autotorch toggle` - Toggles AutoTorch on or off for the player
 - `/autotorch debug` - Enable debugging (admins only for servers, singleplayer requires cheats)
 
 <img width="436" height="90" alt="image" src="https://github.com/user-attachments/assets/ad1f91a1-602e-45a6-8792-4f14cd468565" />
