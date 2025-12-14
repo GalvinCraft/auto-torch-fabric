@@ -180,7 +180,7 @@ public class Autotorch implements ModInitializer {
                             inventory.removeStack(torchSlot, 1);
                         } else {
                             if (debugLoggingEnabled) {
-                                LOGGER.warn("[DEBUG] Cannot place torch: block not air at {}", torchPos);
+                                LOGGER.warn("Cannot place torch: block not air at {}", torchPos);
                             }
                         }
                     }
