@@ -15,6 +15,7 @@ import net.minecraft.item.Items;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -53,7 +54,8 @@ public class Autotorch implements ModInitializer {
         ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
         setAutoTorchEnabled(player, enabled);
         String status = enabled ? "enabled" : "disabled";
-        context.getSource().sendFeedback(() -> Text.literal("AutoTorch has been " + status + "."), false);
+        Formatting color = enabled ? Formatting.GREEN : Formatting.YELLOW;
+        context.getSource().sendFeedback(() -> Text.literal("AutoTorch (player) has been " + status + ".").formatted(color), false);
         return 1;
     }
 
@@ -62,7 +64,8 @@ public class Autotorch implements ModInitializer {
         boolean newState = !isAutoTorchEnabled(player);
         setAutoTorchEnabled(player, newState);
         String status = newState ? "enabled" : "disabled";
-        context.getSource().sendFeedback(() -> Text.literal("AutoTorch has been " + status + "."), false);
+        Formatting color = newState ? Formatting.GREEN : Formatting.YELLOW;
+        context.getSource().sendFeedback(() -> Text.literal("AutoTorch (player) has been " + status + ".").formatted(color), false);
         return 1;
     }
 
@@ -75,7 +78,8 @@ public class Autotorch implements ModInitializer {
                             ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
                             boolean isEnabled = isAutoTorchEnabled(player);
                             String status = isEnabled ? "enabled" : "disabled";
-                            context.getSource().sendFeedback(() -> Text.literal("AutoTorch is currently " + status + "."), false);
+                            Formatting color = isEnabled ? Formatting.GREEN : Formatting.YELLOW;
+                            context.getSource().sendFeedback(() -> Text.literal("AutoTorch (player) is currently " + status + ".").formatted(color), false);
                             return 1;
                         })
                         .then(literal("on").executes(context -> setAutoTorchState(context, true)))
@@ -84,7 +88,8 @@ public class Autotorch implements ModInitializer {
                         .then(literal("debug").requires(source -> source.hasPermissionLevel(2)).executes(context -> {
                             debugLoggingEnabled = !debugLoggingEnabled;
                             String status = debugLoggingEnabled ? "enabled" : "disabled";
-                            context.getSource().sendFeedback(() -> Text.literal("Debug logging " + status + "."), false);
+                            Formatting color = debugLoggingEnabled ? Formatting.GREEN : Formatting.YELLOW;
+                            context.getSource().sendFeedback(() -> Text.literal("AutoTorch debug logging " + status + ".").formatted(color), false);
                             return 1;
                         }))
         ));
@@ -94,7 +99,8 @@ public class Autotorch implements ModInitializer {
             ServerPlayerEntity player = handler.getPlayer();
             boolean isEnabled = isAutoTorchEnabled(player);
             String status = isEnabled ? "enabled" : "disabled";
-            player.sendMessage(Text.literal("AutoTorch is " + status + "."), false);
+            Formatting color = isEnabled ? Formatting.GREEN : Formatting.YELLOW;
+            player.sendMessage(Text.literal("AutoTorch (player) is " + status + ".").formatted(color), false);
         });
 
         // Query this every 20 ticks (1 second)
