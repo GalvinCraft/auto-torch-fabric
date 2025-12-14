@@ -19,3 +19,16 @@ Just keep torches in your inventory, and you'll find that the surrounding space 
 AutoTorcher is available for Minecraft versions 1.21.10 and above!
 
 Due to the frequency of Minecraft updates now, each Minecraft version has its own .jar file. This is mainly to prevent crashes from each minor update
+
+# Changelog
+## 1.1.0 - 14/12/2025
+Closes [#2](https://github.com/GalvinCraft/auto-torch-fabric/issues/2)
+
+Gives players the ability to toggle AutoTorch functionality for themselves. New commands for this are
+
+- `/autotorch on` - Turns AutoTorchon for the player
+- `/autotorch off` - Turns AutoTorchon for the player
+- `/autotorch toggle` - Toggles AutoTorchon for the player
+- `/autotorch debug` - Enable debugging (admins only for servers, singleplayer requires cheats)
+
+<img width="436" height="90" alt="image" src="https://github.com/user-attachments/assets/ad1f91a1-602e-45a6-8792-4f14cd468565" />
