@@ -24,15 +24,15 @@ import org.slf4j.LoggerFactory;
 import static net.minecraft.server.command.CommandManager.literal;
 
 public class Autotorch implements ModInitializer {
-	public static final String MOD_ID = "auto-torch";
-	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+    public static final String MOD_ID = "auto-torch";
+    public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     // Data Attachment for persistent player state
     public static final AttachmentType<Boolean> AUTO_TORCH_ENABLED = AttachmentRegistry.create(
-        Identifier.of(MOD_ID, "enabled"),
-        builder -> builder
-            .initializer(() -> true)  // Default: enabled
-            .persistent(Codec.BOOL)   // Persists across restarts
+            Identifier.of(MOD_ID, "enabled"),
+            builder -> builder
+                    .initializer(() -> true)  // Default: enabled
+                    .persistent(Codec.BOOL)   // Persists across restarts
     );
 
     private static int tickCounter = 0;
@@ -66,27 +66,27 @@ public class Autotorch implements ModInitializer {
         return 1;
     }
 
-	@Override
-	public void onInitialize() {
-		LOGGER.info("{} has been initialised!", MOD_ID);
+    @Override
+    public void onInitialize() {
+        LOGGER.info("{} has been initialised!", MOD_ID);
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(
-            literal("autotorch").executes(context -> {
-                ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
-                boolean isEnabled = isAutoTorchEnabled(player);
-                String status = isEnabled ? "enabled" : "disabled";
-                context.getSource().sendFeedback(() -> Text.literal("AutoTorch is currently " + status + "."), false);
-                return 1;
-            })
-                .then(literal("on").executes(context -> setAutoTorchState(context, true)))
-                .then(literal("off").executes(context -> setAutoTorchState(context, false)))
-                .then(literal("toggle").executes(Autotorch::toggleAutoTorchState))
-                .then(literal("debug").requires(source -> source.hasPermissionLevel(2)).executes(context -> {
-                    debugLoggingEnabled = !debugLoggingEnabled;
-                    String status = debugLoggingEnabled ? "enabled" : "disabled";
-                    context.getSource().sendFeedback(() -> Text.literal("Debug logging " + status + "."), false);
-                    return 1;
-                }))
+                literal("autotorch").executes(context -> {
+                            ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+                            boolean isEnabled = isAutoTorchEnabled(player);
+                            String status = isEnabled ? "enabled" : "disabled";
+                            context.getSource().sendFeedback(() -> Text.literal("AutoTorch is currently " + status + "."), false);
+                            return 1;
+                        })
+                        .then(literal("on").executes(context -> setAutoTorchState(context, true)))
+                        .then(literal("off").executes(context -> setAutoTorchState(context, false)))
+                        .then(literal("toggle").executes(Autotorch::toggleAutoTorchState))
+                        .then(literal("debug").requires(source -> source.hasPermissionLevel(2)).executes(context -> {
+                            debugLoggingEnabled = !debugLoggingEnabled;
+                            String status = debugLoggingEnabled ? "enabled" : "disabled";
+                            context.getSource().sendFeedback(() -> Text.literal("Debug logging " + status + "."), false);
+                            return 1;
+                        }))
         ));
 
         // Show player their AutoTorch status when they join the server
@@ -125,13 +125,13 @@ public class Autotorch implements ModInitializer {
                     BlockPos playerPos = player.getBlockPos();
                     int blockLightLevel = world.getLightLevel(playerPos);
                     if (debugLoggingEnabled) {
-                        LOGGER.info("Player {} is at position {} in light level {}", player.getName().toString(), playerPos, blockLightLevel);
+                        LOGGER.info("[DEBUG] Player {} is at position {} in light level {}", player.getName().toString(), playerPos, blockLightLevel);
                     }
 
                     // Now lets place the torch if the light level is at 0
                     if (blockLightLevel == 0) {
                         if (debugLoggingEnabled) {
-                            LOGGER.info("Player {} is in darkness at position {}, attempting to place torch", player.getName().getString(), playerPos);
+                            LOGGER.info("[DEBUG] Player {} is in darkness at position {}, attempting to place torch", player.getName().getString(), playerPos);
                         }
 
                         PlayerInventory inventory = player.getInventory();
@@ -148,7 +148,7 @@ public class Autotorch implements ModInitializer {
                         // If no torch found, skip this player
                         if (torchSlot == -1) {
                             if (debugLoggingEnabled) {
-                                LOGGER.info("Player {} has no torches!", player.getName().getString());
+                                LOGGER.warn("Player {} has no torches!", player.getName().getString());
                             }
                             continue;
                         }
@@ -159,7 +159,7 @@ public class Autotorch implements ModInitializer {
                         // Only place if below block is solid and above is air
                         if (!world.getBlockState(placePos).isSolidBlock(world, placePos)) {
                             if (debugLoggingEnabled) {
-                                LOGGER.info("Cannot place torch — no solid block below at {}", placePos);
+                                LOGGER.warn("Cannot place torch: no solid block below at {}", placePos);
                             }
                             continue;
                         }
@@ -168,18 +168,18 @@ public class Autotorch implements ModInitializer {
 
                         if (world.isAir(torchPos)) {
                             if (debugLoggingEnabled) {
-                                LOGGER.info("Placed torch at {} and removed one from inventory", torchPos);
+                                LOGGER.info("[DEBUG] Placed torch at {} and removed one from inventory", torchPos);
                             }
                             world.setBlockState(torchPos, Blocks.TORCH.getDefaultState());
                             inventory.removeStack(torchSlot, 1);
                         } else {
                             if (debugLoggingEnabled) {
-                                LOGGER.info("Cannot place torch — block not air at {}", torchPos);
+                                LOGGER.warn("[DEBUG] Cannot place torch: block not air at {}", torchPos);
                             }
                         }
                     }
                 }
             }
         });
-	}
+    }
 }
