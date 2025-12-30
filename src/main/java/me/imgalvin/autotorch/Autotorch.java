@@ -122,9 +122,9 @@ public class Autotorch implements ModInitializer {
                         continue;
                     }
 
-                    // Also only do this if the player is in survival mode
-                    // isBlockBreakingRestricted() returns true for adventure and spectator modes
-                    // isCreative() returns true for creative mode
+                    // Only run this logic if the player is in survival mode (not adventure, spectator, or creative).
+                    // isBlockBreakingRestricted() returns true for adventure and spectator modes, which we want to skip.
+                    // isCreative() returns true for creative mode, which we also want to skip.
                     if (player.interactionManager.getGameMode().isBlockBreakingRestricted() || player.isCreative()) {
                         continue;
                     }
