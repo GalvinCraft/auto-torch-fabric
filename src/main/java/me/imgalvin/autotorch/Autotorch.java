@@ -12,6 +12,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.Items;
+import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
@@ -85,7 +86,7 @@ public class Autotorch implements ModInitializer {
                         .then(literal("on").executes(context -> setAutoTorchState(context, true)))
                         .then(literal("off").executes(context -> setAutoTorchState(context, false)))
                         .then(literal("toggle").executes(Autotorch::toggleAutoTorchState))
-                        .then(literal("debug").requires(source -> source.hasPermissionLevel(2)).executes(context -> {
+                        .then(literal("debug").requires(CommandManager.requirePermissionLevel(CommandManager.GAMEMASTERS_CHECK)).executes(context -> {
                             debugLoggingEnabled = !debugLoggingEnabled;
                             String status = debugLoggingEnabled ? "enabled" : "disabled";
                             Formatting color = debugLoggingEnabled ? Formatting.GREEN : Formatting.YELLOW;
@@ -121,8 +122,10 @@ public class Autotorch implements ModInitializer {
                         continue;
                     }
 
-                    // Also only do this if the player is in survival or adventure mode
-                    if (!player.interactionManager.getGameMode().isSurvivalLike()) {
+                    // Also only do this if the player is in survival mode
+                    // isBlockBreakingRestricted() returns true for adventure and spectator modes
+                    // isCreative() returns true for creative mode
+                    if (player.interactionManager.getGameMode().isBlockBreakingRestricted() || player.isCreative()) {
                         continue;
                     }
 

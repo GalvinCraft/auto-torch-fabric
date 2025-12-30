@@ -16,11 +16,19 @@ _A torch a day keeps the mobs away!_ Or something like that.
 Just keep torches in your inventory, and you'll find that the surrounding space will be automatically lit up!
 
 # Supported versions
+[![Supported versions](https://modrinth-shields.imgalvin.me/badge/autotorcher)](https://modrinth.com/mod/autotorcher)
+
 AutoTorcher is available for Minecraft versions 1.21.10 and above!
 
-Due to the frequency of Minecraft updates now, each Minecraft version has its own .jar file. This is mainly to prevent crashes from each minor update
+Due to the frequency of Minecraft updates now, each Minecraft version has its own .jar file. This is mainly to prevent crashes from each drop.
+
+Please also keep your loader and Fabric API up to date to ensure the best compatibility!
 
 # Changelog
+## 1.2.0 - 30/12/2025
+- Updated for Minecraft 1.21.11
+- Removes torches from being placed when in adventure mode
+
 ## 1.1.0 - 14/12/2025
 Closes [#2](https://github.com/GalvinCraft/auto-torch-fabric/issues/2)
 
