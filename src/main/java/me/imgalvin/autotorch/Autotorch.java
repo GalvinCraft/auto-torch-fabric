@@ -9,21 +9,20 @@ import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.minecraft.ChatFormatting;
 import net.minecraft.block.Blocks;
-import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.core.BlockPos;
 import net.minecraft.item.Items;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.level.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static net.minecraft.server.command.CommandManager.literal;
 
 public class Autotorch implements ModInitializer {
     public static final String MOD_ID = "auto-torch";
@@ -43,30 +42,30 @@ public class Autotorch implements ModInitializer {
     // Default is 'false' to keep the console clean during normal operation.
     private static boolean debugLoggingEnabled = false;
 
-    private static boolean isAutoTorchEnabled(ServerPlayerEntity player) {
+    private static boolean isAutoTorchEnabled(ServerPlayer player) {
         return player.getAttachedOrElse(AUTO_TORCH_ENABLED, true);
     }
 
-    private static void setAutoTorchEnabled(ServerPlayerEntity player, boolean enabled) {
+    private static void setAutoTorchEnabled(ServerPlayer player, boolean enabled) {
         player.setAttached(AUTO_TORCH_ENABLED, enabled);
     }
 
-    private static int setAutoTorchState(CommandContext<ServerCommandSource> context, boolean enabled) throws CommandSyntaxException {
-        ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+    private static int setAutoTorchState(CommandContext<CommandSourceStack> context, boolean enabled) throws CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
         setAutoTorchEnabled(player, enabled);
         String status = enabled ? "enabled" : "disabled";
-        Formatting color = enabled ? Formatting.GREEN : Formatting.YELLOW;
-        context.getSource().sendFeedback(() -> Text.literal("AutoTorch (player) has been " + status + ".").formatted(color), false);
+        ChatFormatting color = enabled ? ChatFormatting.GREEN : ChatFormatting.YELLOW;
+        context.getSource().sendSuccess(() -> Component.literal("AutoTorch (player) has been " + status + ".").withStyle(color), false);
         return 1;
     }
 
-    private static int toggleAutoTorchState(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+    private static int toggleAutoTorchState(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
         boolean newState = !isAutoTorchEnabled(player);
         setAutoTorchEnabled(player, newState);
         String status = newState ? "enabled" : "disabled";
-        Formatting color = newState ? Formatting.GREEN : Formatting.YELLOW;
-        context.getSource().sendFeedback(() -> Text.literal("AutoTorch (player) has been " + status + ".").formatted(color), false);
+        ChatFormatting color = newState ? ChatFormatting.GREEN : ChatFormatting.YELLOW;
+        context.getSource().sendSuccess(() -> Component.literal("AutoTorch (player) has been " + status + ".").withStyle(color), false);
         return 1;
     }
 
@@ -75,35 +74,36 @@ public class Autotorch implements ModInitializer {
         LOGGER.info("{} has been initialised!", MOD_ID);
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(
-                literal("autotorch").executes(context -> {
-                            ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+                Commands.literal("autotorch").executes(context -> {
+                            ServerPlayer player = context.getSource().getPlayerOrException();
                             boolean isEnabled = isAutoTorchEnabled(player);
                             String status = isEnabled ? "enabled" : "disabled";
-                            Formatting color = isEnabled ? Formatting.GREEN : Formatting.YELLOW;
-                            context.getSource().sendFeedback(() -> Text.literal("AutoTorch (player) is currently " + status + ".").formatted(color), false);
+                            ChatFormatting color = isEnabled ? ChatFormatting.GREEN : ChatFormatting.YELLOW;
+                            context.getSource().sendSuccess(() -> Component.literal("AutoTorch (player) is currently " + status + ".").withStyle(color), false);
                             return 1;
                         })
-                        .then(literal("on").executes(context -> setAutoTorchState(context, true)))
-                        .then(literal("off").executes(context -> setAutoTorchState(context, false)))
-                        .then(literal("toggle").executes(Autotorch::toggleAutoTorchState))
-                        .then(literal("debug").requires(CommandManager.requirePermissionLevel(CommandManager.GAMEMASTERS_CHECK)).executes(context -> {
+                        .then(Commands.literal("on").executes(context -> setAutoTorchState(context, true)))
+                        .then(Commands.literal("off").executes(context -> setAutoTorchState(context, false)))
+                        .then(Commands.literal("toggle").executes(Autotorch::toggleAutoTorchState))
+                        .then(Commands.literal("debug").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS)).executes(context -> {
                             debugLoggingEnabled = !debugLoggingEnabled;
                             String status = debugLoggingEnabled ? "enabled" : "disabled";
-                            Formatting color = debugLoggingEnabled ? Formatting.GREEN : Formatting.YELLOW;
-                            context.getSource().sendFeedback(() -> Text.literal("AutoTorch debug logging " + status + ".").formatted(color), false);
+                            ChatFormatting color = debugLoggingEnabled ? ChatFormatting.GREEN : ChatFormatting.YELLOW;
+                            context.getSource().sendSuccess(() -> Component.literal("AutoTorch debug logging " + status + ".").withStyle(color), false);
                             return 1;
                         }))
         ));
 
         // Show player their AutoTorch status when they join the server
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
-            ServerPlayerEntity player = handler.getPlayer();
+            ServerPlayer player = handler.getPlayer();
             boolean isEnabled = isAutoTorchEnabled(player);
             String status = isEnabled ? "enabled" : "disabled";
-            Formatting color = isEnabled ? Formatting.GREEN : Formatting.YELLOW;
-            player.sendMessage(Text.literal("AutoTorch (player) is " + status + ".").formatted(color), false);
+            ChatFormatting color = isEnabled ? ChatFormatting.GREEN : ChatFormatting.YELLOW;
+            player.sendSystemMessage(Component.literal("AutoTorch (player) is " + status + ".").withStyle(color), false);
         });
 
+        // TODO: Move this to scheduler
         // Query this every 20 ticks (1 second)
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             tickCounter++;
@@ -111,14 +111,14 @@ public class Autotorch implements ModInitializer {
             if (tickCounter >= 20) {
                 tickCounter = 0;
 
-                for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
+                for (ServerPlayer player : server.getPlayerList().getPlayers()) {
                     if (!isAutoTorchEnabled(player)) {
                         continue;
                     }
 
                     // This mod should only work in the overworld. Other dimensions don't care about light levels
-                    World world = player.getEntityWorld();
-                    if (world.getRegistryKey() != World.OVERWORLD) {
+                    Level level = player.level();
+                    if (level. != Level.OVERWORLD) {
                         continue;
                     }
 
@@ -131,8 +131,8 @@ public class Autotorch implements ModInitializer {
 
                     // TODO: Also we should consider detecting if the player is digging down?
 
-                    BlockPos playerPos = player.getBlockPos();
-                    int blockLightLevel = world.getLightLevel(playerPos);
+                    BlockPos playerPos = player.blockPosition();
+                    int blockLightLevel = world.getLightEmission(playerPos);
                     if (debugLoggingEnabled) {
                         LOGGER.info("[DEBUG] Player {} is at position {} in light level {}", player.getName().toString(), playerPos, blockLightLevel);
                     }
@@ -143,7 +143,7 @@ public class Autotorch implements ModInitializer {
                             LOGGER.info("[DEBUG] Player {} is in darkness at position {}, attempting to place torch", player.getName().getString(), playerPos);
                         }
 
-                        PlayerInventory inventory = player.getInventory();
+                        Inventory inventory = player.getInventory();
                         int torchSlot = -1;
 
                         // Find a torch
@@ -166,7 +166,8 @@ public class Autotorch implements ModInitializer {
                         BlockPos placePos = playerPos.down();
 
                         // Only place if below block is solid and above is air
-                        if (!world.getBlockState(placePos).isSolidBlock(world, placePos)) {
+                        // TODO: Find alternative for isSolid(), is deprecated.
+                        if (!world.getBlockState(placePos).isSolid()) {
                             if (debugLoggingEnabled) {
                                 LOGGER.warn("Cannot place torch: no solid block below at {}", placePos);
                             }
