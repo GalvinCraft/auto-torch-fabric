@@ -21,7 +21,6 @@ import net.minecraft.world.level.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.Objects;
 
 public class Autotorch implements ModInitializer {
@@ -96,7 +95,6 @@ public class Autotorch implements ModInitializer {
 
         // Show player their AutoTorch status when they join the server
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
-            LOGGER.info("Player {} joined the server, checking AutoTorch status...", handler.getPlayer().getName().getString());
             ServerPlayer player = handler.getPlayer();
             boolean isEnabled = isAutoTorchEnabled(player);
             String status = isEnabled ? "enabled" : "disabled";
@@ -119,27 +117,24 @@ public class Autotorch implements ModInitializer {
 
                     // This mod should only work in the overworld. Other dimensions don't care about light levels
                     // do NOT try-catch this, it WILL freeze the server
-                    Level level = player.level();
-                    if (level.dimension() != Level.OVERWORLD) {
+                    Level world = player.level();
+                    if (world.dimension() != Level.OVERWORLD) {
                         continue;
                     }
 
                     // Only run this logic if the player is in survival mode (not adventure, spectator, or creative).
-                    // isBlockBreakingRestricted() returns true for adventure and spectator modes, which we want to skip.
+                    // isBlockPlacingRestricted() returns true for adventure and spectator modes, which we want to skip.
                     // isCreative() returns true for creative mode, which we also want to skip.
                     if (player.gameMode().isBlockPlacingRestricted() || player.isCreative()) {
                         continue;
                     }
-
-                    // do NOT try-catch this either
-                    Level world = player.level();
 
                     // TODO: Also we should consider detecting if the player is digging down?
 
                     BlockPos playerPos = player.blockPosition();
                     int blockLightLevel = world.getLightEmission(playerPos);
                     if (debugLoggingEnabled) {
-                        LOGGER.info("[DEBUG] Player {} is at position {} in light level {}", player.getName().toString(), playerPos, blockLightLevel);
+                        LOGGER.info("[DEBUG] Player {} is at position {} in light level {}", player.getName(), playerPos, blockLightLevel);
                     }
 
                     // Now lets place the torch if the light level is at 0
