@@ -10,19 +10,19 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.ChatFormatting;
-import net.minecraft.block.Blocks;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
-import net.minecraft.item.Items;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.util.Identifier;
-import net.minecraft.world.World;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.level.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.Objects;
 
 public class Autotorch implements ModInitializer {
     public static final String MOD_ID = "auto-torch";
@@ -30,7 +30,7 @@ public class Autotorch implements ModInitializer {
 
     // Data Attachment for persistent player state
     public static final AttachmentType<Boolean> AUTO_TORCH_ENABLED = AttachmentRegistry.create(
-            Identifier.of(MOD_ID, "enabled"),
+            Objects.requireNonNull(Identifier.tryBuild(MOD_ID, "enabled")),
             builder -> builder
                     .initializer(() -> true)  // Default: enabled
                     .persistent(Codec.BOOL)   // Persists across restarts
@@ -96,6 +96,7 @@ public class Autotorch implements ModInitializer {
 
         // Show player their AutoTorch status when they join the server
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+            LOGGER.info("Player {} joined the server, checking AutoTorch status...", handler.getPlayer().getName().getString());
             ServerPlayer player = handler.getPlayer();
             boolean isEnabled = isAutoTorchEnabled(player);
             String status = isEnabled ? "enabled" : "disabled";
@@ -117,17 +118,21 @@ public class Autotorch implements ModInitializer {
                     }
 
                     // This mod should only work in the overworld. Other dimensions don't care about light levels
+                    // do NOT try-catch this, it WILL freeze the server
                     Level level = player.level();
-                    if (level. != Level.OVERWORLD) {
+                    if (level.dimension() != Level.OVERWORLD) {
                         continue;
                     }
 
                     // Only run this logic if the player is in survival mode (not adventure, spectator, or creative).
                     // isBlockBreakingRestricted() returns true for adventure and spectator modes, which we want to skip.
                     // isCreative() returns true for creative mode, which we also want to skip.
-                    if (player.interactionManager.getGameMode().isBlockBreakingRestricted() || player.isCreative()) {
+                    if (player.gameMode().isBlockPlacingRestricted() || player.isCreative()) {
                         continue;
                     }
+
+                    // do NOT try-catch this either
+                    Level world = player.level();
 
                     // TODO: Also we should consider detecting if the player is digging down?
 
@@ -147,11 +152,8 @@ public class Autotorch implements ModInitializer {
                         int torchSlot = -1;
 
                         // Find a torch
-                        for (int i = 0; i < inventory.size(); i++) {
-                            if (inventory.getStack(i).getItem() == Items.TORCH) {
-                                torchSlot = i;
-                                break;
-                            }
+                        if (inventory.contains(net.minecraft.world.item.Items.TORCH.getDefaultInstance())) {
+                            torchSlot = inventory.findSlotMatchingItem(net.minecraft.world.item.Items.TORCH.getDefaultInstance());
                         }
 
                         // If no torch found, skip this player
@@ -163,7 +165,7 @@ public class Autotorch implements ModInitializer {
                         }
 
                         // Get placement position (block under player)
-                        BlockPos placePos = playerPos.down();
+                        BlockPos placePos = playerPos.below();
 
                         // Only place if below block is solid and above is air
                         // TODO: Find alternative for isSolid(), is deprecated.
@@ -174,14 +176,14 @@ public class Autotorch implements ModInitializer {
                             continue;
                         }
 
-                        BlockPos torchPos = placePos.up();
+                        BlockPos torchPos = placePos.above();
 
-                        if (world.isAir(torchPos)) {
+                        if (world.isEmptyBlock(torchPos)) {
                             if (debugLoggingEnabled) {
                                 LOGGER.info("[DEBUG] Placed torch at {} and removed one from inventory", torchPos);
                             }
-                            world.setBlockState(torchPos, Blocks.TORCH.getDefaultState());
-                            inventory.removeStack(torchSlot, 1);
+                            world.setBlock(torchPos, net.minecraft.world.level.block.Blocks.TORCH.defaultBlockState(), 3);
+                            inventory.removeItem(torchSlot, 1);
                         } else {
                             if (debugLoggingEnabled) {
                                 LOGGER.warn("Cannot place torch: block not air at {}", torchPos);
