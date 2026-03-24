@@ -1,29 +1,29 @@
 {
-	"schemaVersion": 1,
-	"id": "auto-torch",
-	"version": "${version}",
-	"name": "AutoTorcher",
-	"description": "Places torches automatically in dark areas as you explore!",
-	"authors": [
-		"GalvinPython"
-	],
-	"contact": {
-		"homepage": "https://github.com/GalvinCraft/auto-torch-fabric",
-		"sources": "https://github.com/GalvinCraft/auto-torch-fabric",
-        "issues": "https://github.com/GalvinCraft/auto-torch-fabric/issues"
-	},
-	"license": "MIT",
-	"icon": "assets/auto-torch/icon.png",
-	"environment": "*",
-	"entrypoints": {
-		"main": [
-			"me.imgalvin.autotorch.Autotorch"
-		]
-	},
-	"depends": {
-      "fabricloader": ">=0.17.3",
-      "minecraft": "26.1-alpha.4",
-      "java": ">=25",
-      "fabric-api": ">=0.139.5"
-    }
+  "schemaVersion": 1,
+  "id": "auto-torch",
+  "version": "${version}",
+  "name": "AutoTorcher",
+  "description": "Places torches automatically in dark areas as you explore!",
+  "authors": [
+    "GalvinPython"
+  ],
+  "contact": {
+    "homepage": "https://github.com/GalvinCraft/auto-torch-fabric",
+    "sources": "https://github.com/GalvinCraft/auto-torch-fabric",
+    "issues": "https://github.com/GalvinCraft/auto-torch-fabric/issues"
+  },
+  "license": "MIT",
+  "icon": "assets/auto-torch/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "me.imgalvin.autotorch.Autotorch"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.17.3",
+    "minecraft": "26.1",
+    "java": ">=25",
+    "fabric-api": ">=0.139.5"
+  }
 }
